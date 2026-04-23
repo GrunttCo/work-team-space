@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gruntt · Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="brand-mark">
+      <span class="brand-g">GRUNTT</span>
+      <span class="brand-tag">COMMAND CENTER</span>
+    </div>
+    <p class="login-hint-top">Acceso interno del equipo</p>
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="li-user" placeholder="tu nombre de usuario" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <div id="li-error" class="form-error" style="display:none"></div>
+    <button class="btn-primary" onclick="doLogin()">Entrar →</button>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="screen-admin" class="screen">
+  <div class="admin-wrap">
+    <header class="admin-header">
+      <div>
+        <span class="brand-g" style="font-size:18px">GRUNTT</span>
+        <span class="brand-tag" style="margin-left:8px">ADMIN</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-ghost" onclick="goApp()">← Ir a tareas</button>
+        <button class="btn-ghost red" onclick="doLogout()">Salir</button>
+      </div>
+    </header>
+    <div class="admin-body">
+      <div class="admin-left">
+        <h2 class="section-title">Usuarios</h2>
+        <div id="admin-user-list" class="user-list"></div>
+        <button class="btn-secondary" style="margin-top:1rem;width:100%" onclick="openNewUser()">+ Nuevo usuario</button>
+      </div>
+      <div class="admin-right" id="admin-editor">
+        <div class="admin-placeholder">
+          <p>Selecciona un usuario para editarlo<br>o crea uno nuevo</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="screen-app" class="screen">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="brand-mark-sm">
+        <span class="brand-g" style="font-size:16px">GRUNTT</span>
+        <span class="brand-tag">TASKS</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <span class="sidebar-label">Vista</span>
+      <button class="snav active" data-focus="hoy" onclick="setFocus('hoy',this)">
+        <span class="sico">◉</span> Hoy
+        <span class="sbadge" id="badge-hoy"></span>
+      </button>
+      <button class="snav" data-focus="semana" onclick="setFocus('semana',this)">
+        <span class="sico">◎</span> Esta semana
+        <span class="sbadge" id="badge-semana"></span>
+      </button>
+      <button class="snav" data-focus="backlog" onclick="setFocus('backlog',this)">
+        <span class="sico">○</span> Backlog
+        <span class="sbadge" id="badge-backlog"></span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <span class="sidebar-label">Empresa</span>
+      <div id="company-nav"></div>
+    </div>
+
+    <div class="sidebar-section" id="client-section" style="display:none">
+      <span class="sidebar-label">Cliente MND</span>
+      <div id="client-nav"></div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div id="online-users-el"></div>
+      <div class="current-user-badge" id="current-user-badge"></div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="snav" id="admin-btn" onclick="goAdmin()" style="display:none;flex:1">
+          <span class="sico">⚙</span> Admin
+        </button>
+        <button class="snav" onclick="doLogout()" style="flex:1;color:#555">
+          <span class="sico">←</span> Salir
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="main-header">
+      <div>
+        <h1 id="header-greeting">Bienvenido</h1>
+        <p class="header-date" id="header-date"></p>
+      </div>
+      <div class="header-stats">
+        <div class="hstat"><span class="hstat-n" id="hs-done">0</span><span class="hstat-l">hechas</span></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><span class="hstat-n orange" id="hs-pend">0</span><span class="hstat-l">pendientes</span></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><span class="hstat-n muted" id="hs-skip">0</span><span class="hstat-l">mañana</span></div>
+      </div>
+    </header>
+    <div class="prog-wrap"><div class="prog-fill" id="prog-fill"></div></div>
+
+    <div class="add-box">
+      <input type="text" id="task-input" class="task-input-main" placeholder="¿Qué hay que hacer?" />
+      <div class="add-opts">
+        <select id="opt-co" class="opt-sel" onchange="updateClientOpt()"></select>
+        <select id="opt-client" class="opt-sel" style="display:none"></select>
+        <select id="opt-priority" class="opt-sel">
+          <option value="alta">🔴 Alta</option>
+          <option value="media">🟡 Media</option>
+          <option value="baja">⚪ Baja</option>
+        </select>
+        <select id="opt-focus" class="opt-sel">
+          <option value="hoy">Hoy</option>
+          <option value="semana">Esta semana</option>
+          <option value="backlog">Backlog</option>
+        </select>
+        <button class="btn-add" onclick="addTask()">+ Agregar</button>
+      </div>
+    </div>
+
+    <div id="task-list" class="task-list"></div>
+
+    <div id="skipped-wrap" style="display:none;margin-top:2rem">
+      <div class="section-div"><span>→ Para mañana <span id="skip-cnt"></span></span></div>
+      <div id="skipped-list" class="task-list"></div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <div class="section-div"><span>Actividad del equipo</span></div>
+      <div id="activity-feed"></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
