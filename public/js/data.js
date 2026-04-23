@@ -116,9 +116,13 @@ function addActivity(user, action, taskTitle) {
 }
 
 /* ─── SERVER SYNC ─── */
+function apiHeaders(extra) {
+  return Object.assign({ 'X-Gruntt-Token': window._grt || '' }, extra);
+}
+
 async function syncFromServer() {
   try {
-    const res = await fetch('/api/sync');
+    const res = await fetch('/api/sync', { headers: apiHeaders() });
     if (!res.ok) return;
     const d = await res.json();
     if (d.users)    localStorage.setItem(USERS_STORE,    JSON.stringify(d.users));
@@ -132,7 +136,7 @@ async function syncFromServer() {
 function pushToServer(key, data) {
   fetch('/api/sync/' + key, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(data),
   }).catch(() => {});
 }
