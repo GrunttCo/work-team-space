@@ -4,6 +4,7 @@
 
 let tasks = [];
 let appState = { focus: 'hoy', company: 'all', client: 'all', priority: 'all', person: 'all' };
+let editingTaskId = null;
 const PO = { alta: 0, media: 1, baja: 2 };
 
 /* ─── Screens ─── */
@@ -204,8 +205,12 @@ function setPriorityFilter(p, btn) {
   render();
 }
 
-/* ─── Modal nueva tarea ─── */
+/* ─── Modal nueva tarea / editar tarea ─── */
 function openTaskModal() {
+  editingTaskId = null;
+  document.getElementById('modal-title').textContent = 'Nueva tarea';
+  document.getElementById('modal-submit-btn').textContent = 'Crear tarea';
+
   const mCo = document.getElementById('m-co');
   const accessibleCos = Object.entries(COMPANIES).filter(([k]) => canSee(k));
   mCo.innerHTML = accessibleCos.map(([k,co]) => `<option value="${k}">${co.name}</option>`).join('');
@@ -235,8 +240,51 @@ function openTaskModal() {
   setTimeout(() => document.getElementById('m-title').focus(), 60);
 }
 
+function openEditTaskModal(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  editingTaskId = id;
+  document.getElementById('modal-title').textContent = 'Editar tarea';
+  document.getElementById('modal-submit-btn').textContent = 'Guardar cambios';
+
+  const mCo = document.getElementById('m-co');
+  const accessibleCos = Object.entries(COMPANIES).filter(([k]) => canSee(k));
+  mCo.innerHTML = accessibleCos.map(([k,co]) => `<option value="${k}">${co.name}</option>`).join('');
+  mCo.value = t.company;
+  updateModalClient();
+
+  document.getElementById('m-title').value = t.title;
+  document.getElementById('m-priority').value = t.priority;
+  document.getElementById('m-focus').value = t.focus;
+  document.getElementById('m-due').value = t.dueDate || '';
+  document.getElementById('m-recurrence').value = t.recurrence || '';
+  document.getElementById('m-notes').value = t.notes || '';
+  document.getElementById('m-error').style.display = 'none';
+
+  if (mCo.value === 'mnd') {
+    const clientSel = document.getElementById('m-client');
+    if (clientSel && t.client) clientSel.value = t.client;
+  }
+
+  const assigneeWrap = document.getElementById('m-assignee-wrap');
+  if (isAdmin()) {
+    const users = loadUsers();
+    const sel = document.getElementById('m-assignee');
+    sel.innerHTML = users.map(u =>
+      `<option value="${esc(u.displayName)}" ${u.displayName === (t.assignedTo || t.createdBy) ? 'selected' : ''}>${esc(u.displayName)}</option>`
+    ).join('');
+    assigneeWrap.style.display = 'block';
+  } else {
+    assigneeWrap.style.display = 'none';
+  }
+
+  document.getElementById('modal-task').style.display = 'flex';
+  setTimeout(() => document.getElementById('m-title').focus(), 60);
+}
+
 function closeTaskModal() {
   document.getElementById('modal-task').style.display = 'none';
+  editingTaskId = null;
 }
 
 function updateModalClient() {
@@ -269,28 +317,46 @@ function submitTask() {
     : currentUser.displayName;
   const notes = document.getElementById('m-notes').value.trim() || null;
 
-  const task = {
-    id: newTaskId(),
-    title,
-    company: co,
-    client,
-    priority: document.getElementById('m-priority').value,
-    focus: document.getElementById('m-focus').value,
-    tag: client || '',
-    done: false,
-    skipped: false,
-    dueDate,
-    recurrence,
-    lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
-    createdBy: currentUser.displayName,
-    assignedTo,
-    notes,
-    createdAt: new Date().toISOString(),
-  };
+  if (editingTaskId) {
+    const t = tasks.find(x => x.id === editingTaskId);
+    if (t) {
+      t.title = title;
+      t.company = co;
+      t.client = client;
+      t.tag = client || '';
+      t.priority = document.getElementById('m-priority').value;
+      t.focus = document.getElementById('m-focus').value;
+      t.dueDate = dueDate;
+      t.recurrence = recurrence;
+      t.assignedTo = assignedTo;
+      t.notes = notes;
+      saveTasks(tasks);
+      addActivity(currentUser.displayName, 'editó', title);
+    }
+  } else {
+    const task = {
+      id: newTaskId(),
+      title,
+      company: co,
+      client,
+      priority: document.getElementById('m-priority').value,
+      focus: document.getElementById('m-focus').value,
+      tag: client || '',
+      done: false,
+      skipped: false,
+      dueDate,
+      recurrence,
+      lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
+      createdBy: currentUser.displayName,
+      assignedTo,
+      notes,
+      createdAt: new Date().toISOString(),
+    };
+    tasks.unshift(task);
+    saveTasks(tasks);
+    addActivity(currentUser.displayName, 'agregó', title);
+  }
 
-  tasks.unshift(task);
-  saveTasks(tasks);
-  addActivity(currentUser.displayName, 'agregó', title);
   closeTaskModal();
   render();
   renderActivity();
@@ -427,6 +493,7 @@ function taskHTML(t) {
     </div>
     <div class="task-btns">
       ${!t.done ? `<button class="tbtn skip-btn" onclick="skipTask('${t.id}')">→ Mañana</button>` : ''}
+      <button class="tbtn edit-btn" onclick="openEditTaskModal('${t.id}')">✎</button>
       <button class="tbtn del-btn" onclick="deleteTask('${t.id}')">✕</button>
     </div>
   </div>`;
@@ -455,7 +522,7 @@ function skippedHTML(t) {
 function renderActivity() {
   const log = loadActivity().slice(0, 8);
   const el = document.getElementById('activity-feed');
-  const ICONS = { 'agregó':'＋', 'completó':'✓', 'movió a mañana':'→', 'reabrió':'↩' };
+  const ICONS = { 'agregó':'＋', 'completó':'✓', 'movió a mañana':'→', 'reabrió':'↩', 'editó':'✎' };
   el.innerHTML = log.length
     ? log.map(l => `
       <div class="act-row">

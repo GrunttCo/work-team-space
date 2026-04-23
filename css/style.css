@@ -154,6 +154,8 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 .tbtn.skip-btn { border-color:rgba(239,159,39,.28); color:#b87d00; }
 .tbtn.skip-btn:hover { background:rgba(239,159,39,.08); }
 .tbtn.del-btn:hover { border-color:rgba(200,50,50,.3); color:#c44; }
+.tbtn.edit-btn { color:var(--muted); }
+.tbtn.edit-btn:hover { border-color:rgba(100,140,255,.35); color:#6a8fff; background:rgba(100,140,255,.06); }
 .tbtn.restore-btn { border-color:rgba(255,77,0,.25); color:var(--orange); }
 .tbtn.restore-btn:hover { background:rgba(255,77,0,.06); }
 
