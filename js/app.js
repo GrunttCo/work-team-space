@@ -6,6 +6,8 @@ let tasks = [];
 let appState = { focus: 'hoy', company: 'all', client: 'all', priority: 'all', person: 'all' };
 let editingTaskId = null;
 const PO = { alta: 0, media: 1, baja: 2 };
+let pendingSubtasks = [];
+const macroExpandedIds = new Set();
 
 /* ─── Screens ─── */
 function showScreen(name) {
@@ -223,6 +225,10 @@ function openTaskModal() {
   document.getElementById('m-recurrence').value = '';
   document.getElementById('m-notes').value = '';
   document.getElementById('m-error').style.display = 'none';
+  document.getElementById('m-is-macro').checked = false;
+  document.getElementById('m-subtasks-section').style.display = 'none';
+  pendingSubtasks = [];
+  renderPendingSubtasks();
 
   const assigneeWrap = document.getElementById('m-assignee-wrap');
   if (isAdmin()) {
@@ -260,6 +266,11 @@ function openEditTaskModal(id) {
   document.getElementById('m-recurrence').value = t.recurrence || '';
   document.getElementById('m-notes').value = t.notes || '';
   document.getElementById('m-error').style.display = 'none';
+  const isMacro = !!t.isMacro;
+  document.getElementById('m-is-macro').checked = isMacro;
+  document.getElementById('m-subtasks-section').style.display = isMacro ? 'block' : 'none';
+  pendingSubtasks = isMacro && t.subtasks ? t.subtasks.map(s => ({ ...s })) : [];
+  renderPendingSubtasks();
 
   if (mCo.value === 'mnd') {
     const clientSel = document.getElementById('m-client');
@@ -316,6 +327,8 @@ function submitTask() {
     ? document.getElementById('m-assignee').value
     : currentUser.displayName;
   const notes = document.getElementById('m-notes').value.trim() || null;
+  const isMacro = document.getElementById('m-is-macro').checked;
+  const subtasks = isMacro ? pendingSubtasks.map(s => ({ ...s })) : [];
 
   if (editingTaskId) {
     const t = tasks.find(x => x.id === editingTaskId);
@@ -330,6 +343,8 @@ function submitTask() {
       t.recurrence = recurrence;
       t.assignedTo = assignedTo;
       t.notes = notes;
+      t.isMacro = isMacro;
+      t.subtasks = subtasks;
       saveTasks(tasks);
       addActivity(currentUser.displayName, 'editó', title);
     }
@@ -350,6 +365,8 @@ function submitTask() {
       createdBy: currentUser.displayName,
       assignedTo,
       notes,
+      isMacro,
+      subtasks,
       createdAt: new Date().toISOString(),
     };
     tasks.unshift(task);
@@ -396,6 +413,7 @@ function deleteTask(id) {
   if (!t) return;
   if (!confirm(`¿Eliminar "${t.title}"?`)) return;
   tasks = tasks.filter(x => x.id !== id);
+  macroExpandedIds.delete(id);
   saveTasks(tasks);
   render();
 }
@@ -426,6 +444,67 @@ function visibleTasks() {
 function skippedTasks() {
   return tasks.filter(t => t.skipped && canSee(t.company) &&
     (appState.company === 'all' || t.company === appState.company));
+}
+
+/* ─── Macro tasks ─── */
+function toggleMacroSection() {
+  const checked = document.getElementById('m-is-macro').checked;
+  document.getElementById('m-subtasks-section').style.display = checked ? 'block' : 'none';
+}
+
+function addPendingSubtask() {
+  const input = document.getElementById('m-subtask-input');
+  const title = input.value.trim();
+  if (!title) return;
+  pendingSubtasks.push({ id: 'st' + Date.now(), title, done: false });
+  input.value = '';
+  renderPendingSubtasks();
+  input.focus();
+}
+
+function removePendingSubtask(id) {
+  pendingSubtasks = pendingSubtasks.filter(s => s.id !== id);
+  renderPendingSubtasks();
+}
+
+function renderPendingSubtasks() {
+  const list = document.getElementById('m-subtask-list');
+  if (!list) return;
+  list.innerHTML = pendingSubtasks.map(s => `
+    <div class="subtask-input-row">
+      <span class="subtask-input-title">${esc(s.title)}</span>
+      <button type="button" class="tbtn del-btn" onclick="removePendingSubtask('${s.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function toggleMacroExpand(id) {
+  const expanded = macroExpandedIds.has(id);
+  expanded ? macroExpandedIds.delete(id) : macroExpandedIds.add(id);
+  const panel = document.getElementById('stp-' + id);
+  const label = document.getElementById('stl-' + id);
+  if (panel) panel.style.display = expanded ? 'none' : '';
+  if (label) label.textContent = label.dataset.summary + ' ' + (expanded ? '▾' : '▴');
+}
+
+function toggleSubtask(taskId, subtaskId) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t || !t.subtasks) return;
+  const st = t.subtasks.find(s => s.id === subtaskId);
+  if (!st) return;
+  st.done = !st.done;
+  const allDone = t.subtasks.length > 0 && t.subtasks.every(s => s.done);
+  if (allDone && !t.done) {
+    t.done = true;
+    t.doneAt = new Date().toISOString();
+    addActivity(currentUser.displayName, 'completó', t.title);
+  } else if (!allDone && t.done) {
+    t.done = false;
+    t.doneAt = null;
+  }
+  saveTasks(tasks);
+  render();
+  renderActivity();
 }
 
 /* ─── Render ─── */
@@ -476,13 +555,39 @@ function taskHTML(t) {
   const assigneeBadge = assignedName
     ? `<span class="meta-assignee">→ ${esc(assignedName)}</span>`
     : '';
+
+  let macroSection = '';
+  if (t.isMacro) {
+    const subs = t.subtasks || [];
+    if (subs.length > 0) {
+      const doneCnt = subs.filter(s => s.done).length;
+      const pct = Math.round(doneCnt / subs.length * 100);
+      const expanded = macroExpandedIds.has(t.id);
+      macroSection = `
+        <div class="macro-progress" onclick="toggleMacroExpand('${t.id}')">
+          <div class="macro-prog-bar"><div class="macro-prog-fill" style="width:${pct}%"></div></div>
+          <span class="macro-prog-label" id="stl-${t.id}" data-summary="${doneCnt}/${subs.length}">${doneCnt}/${subs.length} ${expanded ? '▴' : '▾'}</span>
+        </div>
+        <div class="macro-subtasks-panel" id="stp-${t.id}" style="${expanded ? '' : 'display:none'}">
+          ${subs.map(s => `
+            <div class="macro-subtask-row ${s.done ? 'st-done' : ''}">
+              <div class="st-chk ${s.done ? 'checked' : ''}" onclick="toggleSubtask('${t.id}','${s.id}')"></div>
+              <span class="st-title ${s.done ? 'done-txt' : ''}">${esc(s.title)}</span>
+            </div>`).join('')}
+        </div>`;
+    } else {
+      macroSection = `<div class="macro-empty-hint">Sin subtareas — edita para agregar</div>`;
+    }
+  }
+
   return `
-  <div class="task-card ${t.done?'is-done':''}">
+  <div class="task-card ${t.done?'is-done':''} ${t.isMacro?'is-macro':''}">
     <div class="p-dot p-${t.priority}"></div>
     <div class="task-chk ${t.done?'checked':''}" onclick="toggleDone('${t.id}')"></div>
     <div class="task-body">
-      <div class="task-title ${t.done?'done-txt':''}">${esc(t.title)}</div>
+      <div class="task-title ${t.done?'done-txt':''}">${t.isMacro?'<span class="macro-badge">◈</span>':''}${esc(t.title)}</div>
       ${t.notes ? `<div class="task-notes">${esc(t.notes)}</div>` : ''}
+      ${macroSection}
       <div class="task-meta">
         <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
         ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}

@@ -223,6 +223,24 @@
       </select>
     </div>
 
+    <div class="field" style="margin-bottom:.5rem">
+      <label class="macro-toggle-label">
+        <input type="checkbox" id="m-is-macro" onchange="toggleMacroSection()"/>
+        <span class="macro-toggle-pill">◈ Tarea macro (con subtareas)</span>
+      </label>
+    </div>
+
+    <div id="m-subtasks-section" style="display:none;margin-bottom:1rem">
+      <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:'Syne',sans-serif;margin-bottom:.5rem">Subtareas</div>
+      <div id="m-subtask-list" class="subtask-input-list"></div>
+      <div style="display:flex;gap:6px;margin-top:.5rem">
+        <input type="text" id="m-subtask-input" placeholder="Escribe una subtarea..."
+               style="flex:1;padding:8px 12px;border:1px solid var(--border-mid);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:'DM Sans',sans-serif"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();addPendingSubtask()}"/>
+        <button type="button" class="btn-ghost" onclick="addPendingSubtask()">+ Agregar</button>
+      </div>
+    </div>
+
     <div class="field">
       <label>Notas <span style="font-size:10px;text-transform:none;letter-spacing:0;color:var(--light)">(opcional)</span></label>
       <textarea id="m-notes" rows="3" placeholder="Contexto, links, instrucciones..."></textarea>

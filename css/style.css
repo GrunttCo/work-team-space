@@ -206,3 +206,31 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 .modal-card .field select option { background:var(--white); color:var(--text); }
 .modal-card .field label { color:var(--muted); }
 .task-notes { font-size:12px; color:var(--muted); margin-top:4px; margin-bottom:2px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+
+/* ─── MACRO TASKS ─── */
+.is-macro { border-left: 3px solid var(--orange); }
+.macro-badge { font-size:11px; color:var(--orange); opacity:.7; margin-right:2px; }
+.macro-progress { display:flex; align-items:center; gap:8px; margin-top:7px; margin-bottom:3px; cursor:pointer; user-select:none; }
+.macro-prog-bar { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.macro-prog-fill { height:100%; background:var(--orange); border-radius:2px; transition:width .35s ease; }
+.macro-prog-label { font-size:11px; color:var(--muted); white-space:nowrap; flex-shrink:0; }
+.macro-subtasks-panel { margin-top:4px; margin-bottom:6px; display:flex; flex-direction:column; gap:3px; }
+.macro-subtask-row { display:flex; align-items:center; gap:8px; padding:4px 6px; border-radius:6px; transition:background .12s; }
+.macro-subtask-row:hover { background:var(--surface); }
+.macro-subtask-row.st-done { opacity:.5; }
+.st-chk { width:14px; height:14px; min-width:14px; border:1.5px solid var(--border-mid); border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .14s; }
+.st-chk:hover { border-color:var(--orange); }
+.st-chk.checked { background:var(--orange); border-color:var(--orange); }
+.st-chk.checked::after { content:''; width:7px; height:4px; border-left:1.5px solid #fff; border-bottom:1.5px solid #fff; transform:rotate(-45deg) translateY(-1px); display:block; }
+.st-title { font-size:12px; color:var(--text); line-height:1.4; }
+.st-title.done-txt { text-decoration:line-through; color:var(--light); }
+.macro-empty-hint { font-size:11px; color:var(--light); margin-top:5px; font-style:italic; }
+
+/* ─── SUBTAREA INPUT EN MODAL ─── */
+.macro-toggle-label { display:inline-flex; align-items:center; cursor:pointer; }
+.macro-toggle-label input { display:none; }
+.macro-toggle-pill { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border-mid); font-size:12px; color:var(--muted); cursor:pointer; transition:all .15s; }
+.macro-toggle-label input:checked + .macro-toggle-pill { background:rgba(255,77,0,0.08); color:var(--orange); border-color:rgba(255,77,0,0.35); }
+.subtask-input-list { display:flex; flex-direction:column; gap:4px; min-height:0; }
+.subtask-input-row { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:var(--surface); border:1px solid var(--border); border-radius:7px; gap:8px; }
+.subtask-input-title { font-size:13px; color:var(--text); flex:1; }
