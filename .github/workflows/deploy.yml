@@ -1,51 +1,22 @@
-name: Build & Deploy → Dokploy
+name: Deploy → Dokploy
 
 on:
   push:
     branches: [main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: grunttco/work-team-space
-
 jobs:
   deploy:
-    name: Build, Push & Redeploy
+    name: Notificar redeploy a Dokploy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Login a GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build y push imagen Docker
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Trigger redeploy en Dokploy
+      - name: Trigger Dokploy
         run: |
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.DOKPLOY_URL }}/api/application.redeploy" \
-            -H "Authorization: Bearer ${{ secrets.DOKPLOY_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"applicationId\":\"${{ secrets.DOKPLOY_APP_ID }}\"}")
-          echo "Dokploy respondió: $RESPONSE"
+            -X POST "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
+          echo "Dokploy respondió: HTTP $RESPONSE"
           if [ "$RESPONSE" != "200" ]; then
             echo "Error al llamar Dokploy (HTTP $RESPONSE)"
             exit 1
           fi
-          echo "✓ Redeploy iniciado correctamente"
+          echo "✓ Redeploy iniciado en Dokploy"
