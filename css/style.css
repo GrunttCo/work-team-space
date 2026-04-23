@@ -38,10 +38,15 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 /* ─── FORMS ─── */
 .field { margin-bottom: 1rem; }
 .field label { display: block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #666; margin-bottom: .4rem; font-family: 'Syne', sans-serif; }
-.field input, .field select { width: 100%; padding: 9px 13px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--r); color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .18s; }
+.field input, .field select { width: 100%; padding: 9px 13px; border: 1px solid transparent; border-radius: var(--r); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .18s; }
 .field input:focus, .field select:focus { border-color: var(--orange); }
 .field input:disabled, .field select:disabled { opacity: .45; cursor: not-allowed; }
-.field select option { background: #333; color: #fff; }
+/* Login (fondo oscuro) */
+.login-card .field input, .login-card .field select { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #fff; }
+.login-card .field select option { background: #333; color: #fff; }
+/* Admin editor (fondo claro) */
+.editor-card .field input, .editor-card .field select { background: var(--white); border-color: var(--border-mid); color: var(--text); }
+.editor-card .field select option { background: var(--white); color: var(--text); }
 .form-error { background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3); border-radius: 7px; padding: 8px 12px; font-size: 12px; color: #ff6b6b; margin-bottom: .75rem; }
 
 /* ─── BUTTONS ─── */
@@ -148,6 +153,7 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 .task-meta { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:4px; }
 .meta-co { font-size:11px; padding:1px 7px; border-radius:9px; border:1px solid; }
 .meta-tag { font-size:11px; color:var(--muted); padding:1px 7px; border-radius:9px; background:var(--surface); border:1px solid var(--border); }
+.meta-recurring { font-size:11px; color:#3B6D11; padding:1px 7px; border-radius:9px; background:rgba(59,109,17,0.08); border:1px solid rgba(59,109,17,0.22); }
 .meta-user { font-size:11px; color:var(--muted); }
 .meta-time { font-size:11px; color:var(--light); margin-left:auto; }
 .task-btns { display:flex; gap:4px; flex-direction:column; align-items:flex-end; flex-shrink:0; }

@@ -12,9 +12,36 @@ function showScreen(name) {
   document.getElementById('screen-' + name).classList.add('active');
 }
 
+/* ─── Recurring tasks reset ─── */
+function checkRecurring() {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const todayDay = today.getDay();
+  let changed = false;
+  tasks.forEach(t => {
+    if (!t.recurrence) return;
+    if (t.lastReset === todayStr) return;
+    let matches = false;
+    if (t.recurrence === 'daily') matches = true;
+    else if (t.recurrence.startsWith('weekly:')) {
+      matches = todayDay === parseInt(t.recurrence.split(':')[1]);
+    }
+    if (matches) {
+      t.done = false;
+      t.skipped = false;
+      t.doneAt = null;
+      t.focus = 'hoy';
+      t.lastReset = todayStr;
+      changed = true;
+    }
+  });
+  if (changed) saveTasks(tasks);
+}
+
 /* ─── Boot ─── */
 function bootApp() {
   tasks = loadTasks();
+  checkRecurring();
   showScreen('app');
   setupSidebar();
   setupAddBox();
@@ -179,6 +206,7 @@ function addTask() {
   const co = document.getElementById('opt-co').value;
   const clientEl = document.getElementById('opt-client');
   const client = co === 'mnd' && clientEl.style.display !== 'none' ? clientEl.value : null;
+  const recurrence = document.getElementById('opt-recurrence').value || null;
   const task = {
     id: newTaskId(),
     title,
@@ -189,6 +217,8 @@ function addTask() {
     tag: client || '',
     done: false,
     skipped: false,
+    recurrence,
+    lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
     createdBy: currentUser.displayName,
     createdAt: new Date().toISOString(),
   };
@@ -315,6 +345,7 @@ function taskHTML(t) {
         <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
         ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}
         ${t.tag && t.tag !== t.client ? `<span class="meta-tag">${esc(t.tag)}</span>` : ''}
+        ${t.recurrence ? `<span class="meta-recurring" title="${recurrenceLabel(t.recurrence)}">↺ ${recurrenceLabel(t.recurrence)}</span>` : ''}
         <span class="meta-user">· ${esc(t.createdBy||'')}</span>
         <span class="meta-time">${relTime(t.createdAt)}</span>
       </div>
@@ -372,4 +403,12 @@ function relTime(iso) {
 
 function esc(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function recurrenceLabel(r) {
+  if (!r) return '';
+  if (r === 'daily') return 'Todos los días';
+  const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const d = parseInt(r.split(':')[1]);
+  return `Cada ${days[d]}`;
 }
