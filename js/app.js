@@ -216,6 +216,7 @@ function openTaskModal() {
   document.getElementById('m-focus').value = appState.focus === 'backlog' ? 'backlog' : appState.focus === 'semana' ? 'semana' : 'hoy';
   document.getElementById('m-due').value = '';
   document.getElementById('m-recurrence').value = '';
+  document.getElementById('m-notes').value = '';
   document.getElementById('m-error').style.display = 'none';
 
   const assigneeWrap = document.getElementById('m-assignee-wrap');
@@ -266,6 +267,7 @@ function submitTask() {
   const assignedTo = isAdmin()
     ? document.getElementById('m-assignee').value
     : currentUser.displayName;
+  const notes = document.getElementById('m-notes').value.trim() || null;
 
   const task = {
     id: newTaskId(),
@@ -282,6 +284,7 @@ function submitTask() {
     lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
     createdBy: currentUser.displayName,
     assignedTo,
+    notes,
     createdAt: new Date().toISOString(),
   };
 
@@ -413,6 +416,7 @@ function taskHTML(t) {
     <div class="task-chk ${t.done?'checked':''}" onclick="toggleDone('${t.id}')"></div>
     <div class="task-body">
       <div class="task-title ${t.done?'done-txt':''}">${esc(t.title)}</div>
+      ${t.notes ? `<div class="task-notes">${esc(t.notes)}</div>` : ''}
       <div class="task-meta">
         <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
         ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}

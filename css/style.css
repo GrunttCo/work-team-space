@@ -198,6 +198,9 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 .modal-close { background:none; border:none; font-size:16px; color:var(--muted); cursor:pointer; padding:4px 8px; border-radius:5px; line-height:1; }
 .modal-close:hover { background:var(--surface); color:var(--text); }
 /* Inputs del modal (fondo claro) */
-.modal-card .field input, .modal-card .field select { background:var(--surface); border:1px solid var(--border-mid); color:var(--text); }
+.modal-card .field input, .modal-card .field select, .modal-card .field textarea { background:var(--surface); border:1px solid var(--border-mid); color:var(--text); }
+.modal-card .field textarea { width:100%; padding:9px 13px; border-radius:var(--r); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; resize:vertical; transition:border-color .18s; line-height:1.5; min-height:72px; }
+.modal-card .field textarea:focus { border-color:var(--orange); }
 .modal-card .field select option { background:var(--white); color:var(--text); }
 .modal-card .field label { color:var(--muted); }
+.task-notes { font-size:12px; color:var(--muted); margin-top:4px; margin-bottom:2px; line-height:1.5; white-space:pre-wrap; word-break:break-word; }
