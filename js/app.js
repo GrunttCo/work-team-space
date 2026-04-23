@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════ */
 
 let tasks = [];
-let appState = { focus: 'hoy', company: 'all', client: 'all' };
+let appState = { focus: 'hoy', company: 'all', client: 'all', priority: 'all' };
 const PO = { alta: 0, media: 1, baja: 2 };
 
 /* ─── Screens ─── */
@@ -44,32 +44,31 @@ function bootApp() {
   checkRecurring();
   showScreen('app');
   setupSidebar();
-  setupAddBox();
   setupDate();
   setupOnline();
   render();
   renderActivity();
 
+  document.getElementById('modal-task').addEventListener('click', function(e) {
+    if (e.target === this) closeTaskModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeTaskModal();
+  });
+
   bc.onmessage = (e) => {
     if (e.data.type === 'sync') { tasks = loadTasks(); render(); }
     if (e.data.type === 'activity') renderActivity();
   };
-
-  document.getElementById('task-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addTask();
-  });
 }
 
-/* ─── Sidebar build ─── */
+/* ─── Sidebar ─── */
 function setupSidebar() {
-  // Current user badge
   document.getElementById('current-user-badge').innerHTML =
     `<span class="cu-name">${esc(currentUser.displayName)}</span>`;
 
-  // Admin button
   if (isAdmin()) document.getElementById('admin-btn').style.display = 'flex';
 
-  // Company nav — solo empresas a las que tiene acceso
   const coNav = document.getElementById('company-nav');
   const accessibleCos = Object.entries(COMPANIES).filter(([k]) => canSee(k));
 
@@ -86,38 +85,13 @@ function setupSidebar() {
   });
   coNav.innerHTML = coHtml;
 
-  // Si solo tiene acceso a una empresa, seleccionarla
   if (accessibleCos.length === 1) {
     appState.company = accessibleCos[0][0];
     coNav.querySelector('.snav').classList.add('active-co');
   }
-
-  // Populate add-box company select
-  const optCo = document.getElementById('opt-co');
-  optCo.innerHTML = accessibleCos.map(([k,co]) =>
-    `<option value="${k}">${co.name}</option>`
-  ).join('');
-  updateClientOpt();
 }
 
-function setupAddBox() {
-  updateClientOpt();
-}
-
-function updateClientOpt() {
-  const co = document.getElementById('opt-co').value;
-  const clientSel = document.getElementById('opt-client');
-  if (co === 'mnd') {
-    clientSel.style.display = 'block';
-    clientSel.innerHTML = MND_CLIENTS.slice(1).map(c =>
-      `<option value="${c}">${c}</option>`
-    ).join('');
-  } else {
-    clientSel.style.display = 'none';
-  }
-}
-
-/* ─── Date & greetings ─── */
+/* ─── Date ─── */
 function setupDate() {
   const d = new Date();
   const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -156,7 +130,7 @@ function renderOnline() {
     : '';
 }
 
-/* ─── Filters ─── */
+/* ─── Filtros sidebar ─── */
 function setFocus(f, btn) {
   appState.focus = f;
   document.querySelectorAll('.snav[data-focus]').forEach(b => b.classList.remove('active'));
@@ -169,8 +143,6 @@ function setCompany(co, btn) {
   appState.client = 'all';
   document.querySelectorAll('.snav[data-co]').forEach(b => b.classList.remove('active-co'));
   btn.classList.add('active-co');
-
-  // Show/hide MND client nav
   const clientSection = document.getElementById('client-section');
   if (co === 'mnd') {
     clientSection.style.display = 'block';
@@ -198,39 +170,88 @@ function renderClientNav() {
   `).join('');
 }
 
-/* ─── Add task ─── */
-function addTask() {
-  const inp = document.getElementById('task-input');
-  const title = inp.value.trim();
-  if (!title) return;
-  const co = document.getElementById('opt-co').value;
-  const clientEl = document.getElementById('opt-client');
-  const client = co === 'mnd' && clientEl.style.display !== 'none' ? clientEl.value : null;
-  const recurrence = document.getElementById('opt-recurrence').value || null;
+/* ─── Filtro de prioridad (barra sobre lista) ─── */
+function setPriorityFilter(p, btn) {
+  appState.priority = p;
+  document.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+/* ─── Modal nueva tarea ─── */
+function openTaskModal() {
+  const mCo = document.getElementById('m-co');
+  const accessibleCos = Object.entries(COMPANIES).filter(([k]) => canSee(k));
+  mCo.innerHTML = accessibleCos.map(([k,co]) => `<option value="${k}">${co.name}</option>`).join('');
+  updateModalClient();
+
+  document.getElementById('m-title').value = '';
+  document.getElementById('m-priority').value = 'alta';
+  document.getElementById('m-focus').value = appState.focus === 'backlog' ? 'backlog' : appState.focus === 'semana' ? 'semana' : 'hoy';
+  document.getElementById('m-due').value = '';
+  document.getElementById('m-recurrence').value = '';
+  document.getElementById('m-error').style.display = 'none';
+
+  document.getElementById('modal-task').style.display = 'flex';
+  setTimeout(() => document.getElementById('m-title').focus(), 60);
+}
+
+function closeTaskModal() {
+  document.getElementById('modal-task').style.display = 'none';
+}
+
+function updateModalClient() {
+  const co = document.getElementById('m-co').value;
+  const wrap = document.getElementById('m-client-wrap');
+  const sel = document.getElementById('m-client');
+  if (co === 'mnd') {
+    wrap.style.display = 'block';
+    sel.innerHTML = MND_CLIENTS.slice(1).map(c => `<option value="${c}">${c}</option>`).join('');
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function submitTask() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) {
+    const err = document.getElementById('m-error');
+    err.textContent = 'Escribe el nombre de la tarea.';
+    err.style.display = 'block';
+    document.getElementById('m-title').focus();
+    return;
+  }
+  const co = document.getElementById('m-co').value;
+  const client = co === 'mnd' ? document.getElementById('m-client').value : null;
+  const recurrence = document.getElementById('m-recurrence').value || null;
+  const dueDate = document.getElementById('m-due').value || null;
+
   const task = {
     id: newTaskId(),
     title,
     company: co,
     client,
-    priority: document.getElementById('opt-priority').value,
-    focus: document.getElementById('opt-focus').value,
+    priority: document.getElementById('m-priority').value,
+    focus: document.getElementById('m-focus').value,
     tag: client || '',
     done: false,
     skipped: false,
+    dueDate,
     recurrence,
     lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
     createdBy: currentUser.displayName,
     createdAt: new Date().toISOString(),
   };
+
   tasks.unshift(task);
   saveTasks(tasks);
   addActivity(currentUser.displayName, 'agregó', title);
-  inp.value = '';
+  closeTaskModal();
   render();
   renderActivity();
 }
 
-/* ─── Task actions ─── */
+/* ─── Acciones de tareas ─── */
 function toggleDone(id) {
   const t = tasks.find(t => t.id === id);
   if (!t) return;
@@ -268,18 +289,24 @@ function deleteTask(id) {
   render();
 }
 
-/* ─── Filter helpers ─── */
+/* ─── Filtrado y ordenación ─── */
 function visibleTasks() {
   return tasks.filter(t => {
     if (t.skipped) return false;
     if (!canSee(t.company)) return false;
     if (appState.company !== 'all' && t.company !== appState.company) return false;
     if (appState.company === 'mnd' && appState.client !== 'all' && t.client !== appState.client) return false;
+    if (appState.priority !== 'all' && t.priority !== appState.priority) return false;
     if (appState.focus === 'hoy') return t.focus === 'hoy';
     if (appState.focus === 'semana') return t.focus === 'hoy' || t.focus === 'semana';
     return true;
-  }).sort((a,b) => {
+  }).sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
+    const da = a.dueDate ? new Date(a.dueDate + 'T00:00:00') : null;
+    const db = b.dueDate ? new Date(b.dueDate + 'T00:00:00') : null;
+    if (da && db) { if (da.getTime() !== db.getTime()) return da - db; }
+    else if (da) return -1;
+    else if (db) return 1;
     return PO[a.priority] - PO[b.priority];
   });
 }
@@ -294,7 +321,6 @@ function render() {
   const vis = visibleTasks();
   const skipped = skippedTasks();
 
-  // Badges
   const countFocus = f => tasks.filter(t =>
     !t.done && !t.skipped && canSee(t.company) &&
     (f === 'backlog' ? true : f === 'semana' ? (t.focus==='hoy'||t.focus==='semana') : t.focus==='hoy')
@@ -304,7 +330,6 @@ function render() {
     document.getElementById('badge-'+f).textContent = n > 0 ? n : '';
   });
 
-  // Stats
   const todayAll = tasks.filter(t => t.focus==='hoy' && !t.skipped && canSee(t.company) &&
     (appState.company==='all' || t.company===appState.company));
   const done = todayAll.filter(t=>t.done).length;
@@ -316,13 +341,11 @@ function render() {
   const pct = (done+pend) > 0 ? Math.round(done/(done+pend)*100) : 0;
   document.getElementById('prog-fill').style.width = pct + '%';
 
-  // Task list
   const list = document.getElementById('task-list');
   list.innerHTML = vis.length
     ? vis.map(taskHTML).join('')
-    : `<div class="empty-state"><strong>Todo limpio ✓</strong>No hay tareas aquí. Agrega una arriba.</div>`;
+    : `<div class="empty-state"><strong>Todo limpio ✓</strong>No hay tareas aquí. Crea una con el botón de arriba.</div>`;
 
-  // Skipped
   const sw = document.getElementById('skipped-wrap');
   if (skipped.length) {
     sw.style.display = 'block';
@@ -335,6 +358,8 @@ function render() {
 
 function taskHTML(t) {
   const co = COMPANIES[t.company] || { color: '#888', name: t.company };
+  const due = t.dueDate ? `<span class="meta-due ${dueSoonClass(t.dueDate)}">${formatDue(t.dueDate)}</span>` : '';
+  const rec = t.recurrence ? `<span class="meta-recurring">↺ ${recurrenceLabel(t.recurrence)}</span>` : '';
   return `
   <div class="task-card ${t.done?'is-done':''}">
     <div class="p-dot p-${t.priority}"></div>
@@ -345,7 +370,7 @@ function taskHTML(t) {
         <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
         ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}
         ${t.tag && t.tag !== t.client ? `<span class="meta-tag">${esc(t.tag)}</span>` : ''}
-        ${t.recurrence ? `<span class="meta-recurring" title="${recurrenceLabel(t.recurrence)}">↺ ${recurrenceLabel(t.recurrence)}</span>` : ''}
+        ${due}${rec}
         <span class="meta-user">· ${esc(t.createdBy||'')}</span>
         <span class="meta-time">${relTime(t.createdAt)}</span>
       </div>
@@ -376,7 +401,7 @@ function skippedHTML(t) {
   </div>`;
 }
 
-/* ─── Activity ─── */
+/* ─── Actividad ─── */
 function renderActivity() {
   const log = loadActivity().slice(0, 8);
   const el = document.getElementById('activity-feed');
@@ -401,6 +426,27 @@ function relTime(iso) {
   return `hace ${Math.floor(m/1440)}d`;
 }
 
+function formatDue(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return `Venció hace ${Math.abs(diff)}d`;
+  if (diff === 0) return 'Vence hoy';
+  if (diff === 1) return 'Mañana';
+  if (diff < 7) return `En ${diff} días`;
+  return d.toLocaleDateString('es-CO', { day:'numeric', month:'short' });
+}
+
+function dueSoonClass(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  if (diff < 0) return 'due-overdue';
+  if (diff <= 1) return 'due-urgent';
+  if (diff <= 3) return 'due-soon';
+  return 'due-ok';
+}
+
 function esc(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -409,6 +455,5 @@ function recurrenceLabel(r) {
   if (!r) return '';
   if (r === 'daily') return 'Todos los días';
   const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const d = parseInt(r.split(':')[1]);
-  return `Cada ${days[d]}`;
+  return `Cada ${days[parseInt(r.split(':')[1])]}`;
 }
