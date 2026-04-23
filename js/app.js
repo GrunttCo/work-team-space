@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════ */
 
 let tasks = [];
-let appState = { focus: 'hoy', company: 'all', client: 'all', priority: 'all' };
+let appState = { focus: 'hoy', company: 'all', client: 'all', priority: 'all', person: 'all' };
 const PO = { alta: 0, media: 1, baja: 2 };
 
 /* ─── Screens ─── */
@@ -89,6 +89,32 @@ function setupSidebar() {
     appState.company = accessibleCos[0][0];
     coNav.querySelector('.snav').classList.add('active-co');
   }
+
+  if (isAdmin()) {
+    document.getElementById('person-section').style.display = 'flex';
+    renderPersonNav();
+  }
+}
+
+function renderPersonNav() {
+  const users = loadUsers();
+  const nav = document.getElementById('person-nav');
+  let html = `<button class="snav active-co" data-person="all" onclick="setPerson('all',this)">
+    <span class="sico">◈</span> Todos
+  </button>`;
+  users.forEach(u => {
+    html += `<button class="snav" data-person="${esc(u.id)}" onclick='setPerson(${JSON.stringify(u.displayName)},this)'>
+      <span class="sico" style="font-size:9px">●</span> ${esc(u.displayName)}
+    </button>`;
+  });
+  nav.innerHTML = html;
+}
+
+function setPerson(p, btn) {
+  appState.person = p;
+  document.querySelectorAll('.snav[data-person]').forEach(b => b.classList.remove('active-co'));
+  btn.classList.add('active-co');
+  render();
 }
 
 /* ─── Date ─── */
@@ -192,6 +218,18 @@ function openTaskModal() {
   document.getElementById('m-recurrence').value = '';
   document.getElementById('m-error').style.display = 'none';
 
+  const assigneeWrap = document.getElementById('m-assignee-wrap');
+  if (isAdmin()) {
+    const users = loadUsers();
+    const sel = document.getElementById('m-assignee');
+    sel.innerHTML = users.map(u =>
+      `<option value="${esc(u.displayName)}" ${u.id === currentUser.id ? 'selected' : ''}>${esc(u.displayName)}</option>`
+    ).join('');
+    assigneeWrap.style.display = 'block';
+  } else {
+    assigneeWrap.style.display = 'none';
+  }
+
   document.getElementById('modal-task').style.display = 'flex';
   setTimeout(() => document.getElementById('m-title').focus(), 60);
 }
@@ -225,6 +263,9 @@ function submitTask() {
   const client = co === 'mnd' ? document.getElementById('m-client').value : null;
   const recurrence = document.getElementById('m-recurrence').value || null;
   const dueDate = document.getElementById('m-due').value || null;
+  const assignedTo = isAdmin()
+    ? document.getElementById('m-assignee').value
+    : currentUser.displayName;
 
   const task = {
     id: newTaskId(),
@@ -240,6 +281,7 @@ function submitTask() {
     recurrence,
     lastReset: recurrence ? new Date().toISOString().slice(0, 10) : null,
     createdBy: currentUser.displayName,
+    assignedTo,
     createdAt: new Date().toISOString(),
   };
 
@@ -297,6 +339,7 @@ function visibleTasks() {
     if (appState.company !== 'all' && t.company !== appState.company) return false;
     if (appState.company === 'mnd' && appState.client !== 'all' && t.client !== appState.client) return false;
     if (appState.priority !== 'all' && t.priority !== appState.priority) return false;
+    if (appState.person !== 'all' && (t.assignedTo || t.createdBy) !== appState.person) return false;
     if (appState.focus === 'hoy') return t.focus === 'hoy';
     if (appState.focus === 'semana') return t.focus === 'hoy' || t.focus === 'semana';
     return true;
@@ -360,6 +403,10 @@ function taskHTML(t) {
   const co = COMPANIES[t.company] || { color: '#888', name: t.company };
   const due = t.dueDate ? `<span class="meta-due ${dueSoonClass(t.dueDate)}">${formatDue(t.dueDate)}</span>` : '';
   const rec = t.recurrence ? `<span class="meta-recurring">↺ ${recurrenceLabel(t.recurrence)}</span>` : '';
+  const assignedName = t.assignedTo || t.createdBy || '';
+  const assigneeBadge = assignedName
+    ? `<span class="meta-assignee">→ ${esc(assignedName)}</span>`
+    : '';
   return `
   <div class="task-card ${t.done?'is-done':''}">
     <div class="p-dot p-${t.priority}"></div>
@@ -370,8 +417,7 @@ function taskHTML(t) {
         <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
         ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}
         ${t.tag && t.tag !== t.client ? `<span class="meta-tag">${esc(t.tag)}</span>` : ''}
-        ${due}${rec}
-        <span class="meta-user">· ${esc(t.createdBy||'')}</span>
+        ${due}${rec}${assigneeBadge}
         <span class="meta-time">${relTime(t.createdAt)}</span>
       </div>
     </div>
