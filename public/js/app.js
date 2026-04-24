@@ -107,7 +107,7 @@ function renderPersonNav() {
     <span class="sico">◈</span> Todos
   </button>`;
   users.forEach(u => {
-    html += `<button class="snav" data-person="${esc(u.id)}" onclick='setPerson(${JSON.stringify(u.displayName)},this)'>
+    html += `<button class="snav" data-person="${esc(u.id)}" onclick='setPerson(${JSON.stringify(u.id)},this)'>
       <span class="sico" style="font-size:9px">●</span> ${esc(u.displayName)}
     </button>`;
   });
@@ -427,7 +427,10 @@ function visibleTasks() {
     if (appState.company !== 'all' && t.company !== appState.company) return false;
     if (appState.company === 'mnd' && appState.client !== 'all' && t.client !== appState.client) return false;
     if (appState.priority !== 'all' && t.priority !== appState.priority) return false;
-    if (appState.person !== 'all' && (t.assignedTo || t.createdBy) !== appState.person) return false;
+    if (appState.person !== 'all') {
+      const personUser = loadUsers().find(u => u.id === appState.person);
+      if (!personUser || (t.assignedTo || t.createdBy) !== personUser.displayName) return false;
+    }
     if (appState.focus === 'hoy') return t.focus === 'hoy';
     if (appState.focus === 'semana') return t.focus === 'hoy' || t.focus === 'semana';
     return true;
@@ -581,8 +584,9 @@ function taskHTML(t) {
     }
   }
 
+  const clientColor = MND_CLIENT_COLORS[t.client] || co.color;
   const clientBadge = t.client
-    ? `<span class="meta-client" style="color:${co.color};background:${co.color}12;border-color:${co.color}35">${esc(t.client)}</span>`
+    ? `<span class="meta-client" style="color:${clientColor};background:${clientColor}18;border-color:${clientColor}40">${esc(t.client)}</span>`
     : '';
 
   return `
@@ -617,7 +621,7 @@ function skippedHTML(t) {
       <div class="task-title">${esc(t.title)}</div>
       <div class="task-meta">
         <span class="meta-co" style="color:${co.color};background:${co.color}18;border-color:${co.color}40">${co.name}</span>
-        ${t.client ? `<span class="meta-client" style="color:${co.color};background:${co.color}12;border-color:${co.color}35">${esc(t.client)}</span>` : ''}
+        ${t.client ? `<span class="meta-client" style="color:${MND_CLIENT_COLORS[t.client]||co.color};background:${MND_CLIENT_COLORS[t.client]||co.color}18;border-color:${MND_CLIENT_COLORS[t.client]||co.color}40">${esc(t.client)}</span>` : ''}
         <span class="meta-user">· ${esc(t.createdBy||'')}</span>
       </div>
     </div>

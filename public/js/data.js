@@ -22,6 +22,17 @@ const MND_CLIENTS = [
   'Mendideportivo',
 ];
 
+const MND_CLIENT_COLORS = {
+  'Hospitecnica':         '#E05C2A',
+  'Divinoplay':           '#9B59B6',
+  'Civil United':         '#16A085',
+  'Grupo K':              '#D4860A',
+  'Biosignos':            '#27AE60',
+  'MND Agency (Interno)': '#185FA5',
+  'WON Sports':           '#3B6D11',
+  'Mendideportivo':       '#C0392B',
+};
+
 const USERS_STORE    = 'gruntt_users_v3';
 const SESSION_KEY    = 'gruntt_session_v3';
 const TASKS_STORE    = 'gruntt_tasks_v3';

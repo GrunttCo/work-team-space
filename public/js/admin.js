@@ -131,11 +131,22 @@ function saveUser(idOrNew) {
   } else {
     const idx = users.findIndex(u => u.id === idOrNew);
     if (idx === -1) return;
+    const oldName = users[idx].displayName;
     users[idx].displayName = displayName;
     if (users[idx].role !== 'admin') users[idx].username = username;
     if (pass) users[idx].passwordHash = hashPass(pass);
     users[idx].role = role;
     users[idx].companies = role === 'admin' ? ['gruntt','mnd','won'] : companies;
+
+    if (oldName !== displayName) {
+      const allTasks = loadTasks();
+      let changed = false;
+      allTasks.forEach(t => {
+        if (t.assignedTo === oldName) { t.assignedTo = displayName; changed = true; }
+        if (t.createdBy === oldName) { t.createdBy = displayName; changed = true; }
+      });
+      if (changed) saveTasks(allTasks);
+    }
   }
 
   saveUsers(users);
