@@ -136,9 +136,28 @@ async function syncFromServer() {
     const res = await fetch('/api/sync', { headers: apiHeaders() });
     if (!res.ok) return;
     const d = await res.json();
-    if (d.users)    localStorage.setItem(USERS_STORE,    JSON.stringify(d.users));
-    if (d.tasks)    localStorage.setItem(TASKS_STORE,    JSON.stringify(d.tasks));
+
+    if (d.users) localStorage.setItem(USERS_STORE, JSON.stringify(d.users));
     if (d.activity) localStorage.setItem(ACTIVITY_STORE, JSON.stringify(d.activity));
+
+    if (d.tasks) {
+      const localRaw = localStorage.getItem(TASKS_STORE);
+      if (localRaw) {
+        const local = JSON.parse(localRaw);
+        const serverTasks = d.tasks.tasks || [];
+        const localTasks = local.tasks || [];
+        const serverIds = new Set(serverTasks.map(t => t.id));
+        const localOnly = localTasks.filter(t => !serverIds.has(t.id));
+        const merged = {
+          tasks: [...serverTasks, ...localOnly],
+          counter: Math.max(d.tasks.counter || 0, local.counter || 0),
+        };
+        localStorage.setItem(TASKS_STORE, JSON.stringify(merged));
+        if (localOnly.length > 0) pushToServer('tasks', merged);
+      } else {
+        localStorage.setItem(TASKS_STORE, JSON.stringify(d.tasks));
+      }
+    }
   } catch(_) {
     /* sin servidor (dev local) — usa localStorage directamente */
   }
