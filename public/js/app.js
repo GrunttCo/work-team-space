@@ -43,7 +43,6 @@ function checkRecurring() {
 
 /* ─── Boot ─── */
 async function bootApp() {
-  await syncFromServer();
   tasks = loadTasks();
   checkRecurring();
   showScreen('app');
@@ -421,16 +420,16 @@ function deleteTask(id) {
 
 /* ─── Filtrado y ordenación ─── */
 function visibleTasks() {
+  const personUser = appState.person !== 'all'
+    ? loadUsers().find(u => u.id === appState.person)
+    : null;
   return tasks.filter(t => {
     if (t.skipped) return false;
     if (!canSee(t.company)) return false;
     if (appState.company !== 'all' && t.company !== appState.company) return false;
     if (appState.company === 'mnd' && appState.client !== 'all' && t.client !== appState.client) return false;
     if (appState.priority !== 'all' && t.priority !== appState.priority) return false;
-    if (appState.person !== 'all') {
-      const personUser = loadUsers().find(u => u.id === appState.person);
-      if (!personUser || (t.assignedTo || t.createdBy) !== personUser.displayName) return false;
-    }
+    if (personUser && (t.assignedTo || t.createdBy) !== personUser.displayName) return false;
     if (appState.focus === 'hoy') return t.focus === 'hoy';
     if (appState.focus === 'semana') return t.focus === 'hoy' || t.focus === 'semana';
     return true;
@@ -615,13 +614,14 @@ function taskHTML(t) {
 
 function skippedHTML(t) {
   const co = COMPANIES[t.company] || { color: '#888', name: t.company };
+  const clientColor = MND_CLIENT_COLORS[t.client] || co.color;
   return `
   <div class="task-card is-skipped" style="border-left:4px solid ${co.color}">
     <div class="task-body">
       <div class="task-title">${esc(t.title)}</div>
       <div class="task-meta">
         <span class="meta-co" style="color:${co.color};background:${co.color}18;border-color:${co.color}40">${co.name}</span>
-        ${t.client ? `<span class="meta-client" style="color:${MND_CLIENT_COLORS[t.client]||co.color};background:${MND_CLIENT_COLORS[t.client]||co.color}18;border-color:${MND_CLIENT_COLORS[t.client]||co.color}40">${esc(t.client)}</span>` : ''}
+        ${t.client ? `<span class="meta-client" style="color:${clientColor};background:${clientColor}18;border-color:${clientColor}40">${esc(t.client)}</span>` : ''}
         <span class="meta-user">· ${esc(t.createdBy||'')}</span>
       </div>
     </div>
