@@ -59,14 +59,16 @@ function showErr(msg) {
 }
 
 /* ─── Tecla Enter en login ─── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   ['li-user','li-pass'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => {
       if (e.key === 'Enter') doLogin();
     });
   });
 
-  // Auto-login si hay sesión activa
+  // Sync antes de mostrar login para que las credenciales del servidor estén disponibles
+  await syncFromServer();
+
   const saved = getSession();
   if (saved) {
     currentUser = saved;
