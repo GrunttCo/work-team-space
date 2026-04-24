@@ -3,6 +3,9 @@ services:
     build: .
     volumes:
       - gruntt_data:/data
+    environment:
+      - API_SECRET=${API_SECRET}
+      - DATA_FILE=${DATA_FILE:-/data/gruntt.json}
     restart: unless-stopped
 
 volumes:
