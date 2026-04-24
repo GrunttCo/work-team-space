@@ -581,8 +581,12 @@ function taskHTML(t) {
     }
   }
 
+  const clientBadge = t.client
+    ? `<span class="meta-client" style="color:${co.color};background:${co.color}12;border-color:${co.color}35">${esc(t.client)}</span>`
+    : '';
+
   return `
-  <div class="task-card ${t.done?'is-done':''} ${t.isMacro?'is-macro':''}">
+  <div class="task-card ${t.done?'is-done':''} ${t.isMacro?'is-macro':''}" style="border-left:4px solid ${co.color}">
     <div class="p-dot p-${t.priority}"></div>
     <div class="task-chk ${t.done?'checked':''}" onclick="toggleDone('${t.id}')"></div>
     <div class="task-body">
@@ -590,8 +594,8 @@ function taskHTML(t) {
       ${t.notes ? `<div class="task-notes">${esc(t.notes)}</div>` : ''}
       ${macroSection}
       <div class="task-meta">
-        <span class="meta-co" style="color:${co.color};border-color:${co.color}33">${co.name}</span>
-        ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}
+        <span class="meta-co" style="color:${co.color};background:${co.color}18;border-color:${co.color}40">${co.name}</span>
+        ${clientBadge}
         ${t.tag && t.tag !== t.client ? `<span class="meta-tag">${esc(t.tag)}</span>` : ''}
         ${due}${rec}${assigneeBadge}
         <span class="meta-time">${relTime(t.createdAt)}</span>
@@ -608,12 +612,12 @@ function taskHTML(t) {
 function skippedHTML(t) {
   const co = COMPANIES[t.company] || { color: '#888', name: t.company };
   return `
-  <div class="task-card is-skipped">
+  <div class="task-card is-skipped" style="border-left:4px solid ${co.color}">
     <div class="task-body">
       <div class="task-title">${esc(t.title)}</div>
       <div class="task-meta">
-        <span class="meta-co" style="color:${co.color}">${co.name}</span>
-        ${t.client ? `<span class="meta-tag">${esc(t.client)}</span>` : ''}
+        <span class="meta-co" style="color:${co.color};background:${co.color}18;border-color:${co.color}40">${co.name}</span>
+        ${t.client ? `<span class="meta-client" style="color:${co.color};background:${co.color}12;border-color:${co.color}35">${esc(t.client)}</span>` : ''}
         <span class="meta-user">· ${esc(t.createdBy||'')}</span>
       </div>
     </div>

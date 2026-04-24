@@ -125,11 +125,11 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 
 /* ─── TASKS ─── */
 .task-list { display: flex; flex-direction: column; gap: 5px; }
-.task-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 11px 13px; display: flex; align-items: flex-start; gap: 9px; transition: border-color .14s; animation: sIn .18s ease; }
+.task-card { background: var(--white); border: 1px solid var(--border); border-left-width: 4px; border-radius: var(--r); padding: 11px 13px; display: flex; align-items: flex-start; gap: 9px; transition: border-color .14s; animation: sIn .18s ease; }
 @keyframes sIn { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:translateX(0); } }
 .task-card:hover { border-color: var(--border-mid); }
 .task-card.is-done { opacity: .5; }
-.task-card.is-skipped { border-left: 3px solid #EF9F27; border-radius: 0 var(--r) var(--r) 0; background: #fffdf8; }
+.task-card.is-skipped { border-radius: 0 var(--r) var(--r) 0; background: #fffdf8; }
 .task-chk { width: 17px; height: 17px; min-width: 17px; border: 1.5px solid var(--border-mid); border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all .14s; flex-shrink: 0; }
 .task-chk:hover { border-color: var(--orange); }
 .task-chk.checked { background: var(--orange); border-color: var(--orange); }
@@ -142,7 +142,8 @@ html,body { height: 100%; font-family: 'DM Sans', sans-serif; font-size: 14px; c
 .task-title { font-size:14px; color:var(--text); line-height:1.4; word-break:break-word; }
 .task-title.done-txt { text-decoration:line-through; color:var(--light); }
 .task-meta { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:4px; }
-.meta-co { font-size:11px; padding:1px 7px; border-radius:9px; border:1px solid; }
+.meta-co { font-size:11px; font-weight:600; padding:1px 7px; border-radius:9px; border:1px solid; }
+.meta-client { font-size:11px; font-weight:500; padding:1px 7px; border-radius:9px; border:1px solid; }
 .meta-tag { font-size:11px; color:var(--muted); padding:1px 7px; border-radius:9px; background:var(--surface); border:1px solid var(--border); }
 .meta-recurring { font-size:11px; color:#3B6D11; padding:1px 7px; border-radius:9px; background:rgba(59,109,17,0.08); border:1px solid rgba(59,109,17,0.22); }
 .meta-assignee { font-size:11px; color:#185FA5; padding:1px 7px; border-radius:9px; background:rgba(24,95,165,0.07); border:1px solid rgba(24,95,165,0.2); font-weight:500; }
