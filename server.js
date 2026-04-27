@@ -1,3 +1,5 @@
+const https = require('https');
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '';
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -16,6 +18,31 @@ function requireToken(req, res, next) {
   }
   next();
 }
+
+app.post('/api/verify-captcha', requireToken, (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.json({ ok: false });
+
+  const payload = `secret=${RECAPTCHA_SECRET}&response=${encodeURIComponent(token)}`;
+  const options = {
+    hostname: 'www.google.com',
+    path: '/recaptcha/api/siteverify',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  };
+
+  const request = https.request(options, (response) => {
+    let data = '';
+    response.on('data', chunk => data += chunk);
+    response.on('end', () => {
+      try { res.json({ ok: JSON.parse(data).success === true }); }
+      catch (_) { res.json({ ok: false }); }
+    });
+  });
+  request.on('error', () => res.json({ ok: false }));
+  request.write(payload);
+  request.end();
+});
 
 function readStore() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }

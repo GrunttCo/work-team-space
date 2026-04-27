@@ -24,24 +24,35 @@ function clearSession() {
   currentUser = null;
 }
 
-function doLogin() {
+async function doLogin() {
   const uname = document.getElementById('li-user').value.trim().toLowerCase();
-  const pass = document.getElementById('li-pass').value;
-  const errEl = document.getElementById('li-error');
+  const pass  = document.getElementById('li-pass').value;
 
   if (!uname || !pass) { showErr('Completa usuario y contraseña.'); return; }
 
+  const captchaToken = grecaptcha.getResponse();
+  if (!captchaToken) { showErr('Completa el captcha.'); return; }
+
+  const verifyRes = await fetch('/api/verify-captcha', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-gruntt-token': window._grt },
+    body: JSON.stringify({ token: captchaToken })
+  });
+  const { ok } = await verifyRes.json();
+  if (!ok) { showErr('Captcha inválido. Intenta de nuevo.'); grecaptcha.reset(); return; }
+
   const users = loadUsers();
-  const user = users.find(u => u.username.toLowerCase() === uname);
+  const user  = users.find(u => u.username.toLowerCase() === uname);
 
   if (!user || user.passwordHash !== hashPass(pass)) {
     showErr('Usuario o contraseña incorrectos.');
     document.getElementById('li-pass').value = '';
+    grecaptcha.reset();
     return;
   }
 
   setSession(user);
-  errEl.style.display = 'none';
+  document.getElementById('li-error').style.display = 'none';
   bootApp();
 }
 

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="css/style.css"/>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
 
@@ -28,6 +29,7 @@
       <label>Contraseña</label>
       <input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password"/>
     </div>
+    <div class="g-recaptcha" data-sitekey="6LeOk80sAAAAAA3-bLbIhsEUon5ISBfIOltBqre4" data-theme="dark"></div>
     <div id="li-error" class="form-error" style="display:none"></div>
     <button class="btn-primary" onclick="doLogin()">Entrar →</button>
   </div>
