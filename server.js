@@ -1,5 +1,5 @@
 const https = require('https');
-const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '';
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET || '6LeOk80sAAAAAE1fUyfzETYbi5Bnhpx73KtvQt4J';
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
