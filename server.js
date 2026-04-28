@@ -72,7 +72,20 @@ app.post('/api/sync/:key', requireToken, (req, res) => {
   const { key } = req.params;
   if (!VALID_KEYS.has(key)) return res.status(400).json({ error: 'invalid key' });
   const store = readStore();
-  store[key] = req.body;
+  if (key === 'tasks') {
+    const existing = store.tasks || { tasks: [], counter: 0 };
+    const incoming = req.body;
+    const existingTasks = existing.tasks || [];
+    const incomingTasks = incoming.tasks || [];
+    const incomingIds = new Set(incomingTasks.map(t => t.id));
+    const serverOnly = existingTasks.filter(t => !incomingIds.has(t.id));
+    store.tasks = {
+      tasks: [...incomingTasks, ...serverOnly],
+      counter: Math.max(incoming.counter || 0, existing.counter || 0),
+    };
+  } else {
+    store[key] = req.body;
+  }
   writeStore(store);
   res.json({ ok: true });
 });

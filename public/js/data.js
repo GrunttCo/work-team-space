@@ -154,13 +154,16 @@ async function syncFromServer() {
         };
         localStorage.setItem(TASKS_STORE, JSON.stringify(merged));
         if (localOnly.length > 0) pushToServer('tasks', merged);
+        return merged.tasks;
       } else {
         localStorage.setItem(TASKS_STORE, JSON.stringify(d.tasks));
+        return d.tasks.tasks || [];
       }
     }
   } catch(_) {
     /* sin servidor (dev local) — usa localStorage directamente */
   }
+  return null;
 }
 
 function pushToServer(key, data) {

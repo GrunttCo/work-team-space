@@ -52,6 +52,14 @@ async function bootApp() {
   render();
   renderActivity();
 
+  const synced = await syncFromServer();
+  if (synced) { tasks = synced; _taskIdCounter = JSON.parse(localStorage.getItem(TASKS_STORE)||'{}').counter || _taskIdCounter; render(); renderActivity(); }
+
+  setInterval(async () => {
+    const fresh = await syncFromServer();
+    if (fresh) { tasks = fresh; _taskIdCounter = JSON.parse(localStorage.getItem(TASKS_STORE)||'{}').counter || _taskIdCounter; render(); renderActivity(); }
+  }, 30000);
+
   document.getElementById('modal-task').addEventListener('click', function(e) {
     if (e.target === this) closeTaskModal();
   });
